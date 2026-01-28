@@ -1,0 +1,5 @@
+{
+  "name": "FormFit Logic",
+  "description": "An algorithmic fitness engine that adapts your workout plan based on performance data and progressive overload logic. Features AI-powered diet recommendations.",
+  "requestFramePermissions": []
+}
