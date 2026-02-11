@@ -34,7 +34,7 @@ const App: React.FC = () => {
   // Workout State
   const [workoutQueue, setWorkoutQueue] = useState<Exercise[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
-  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
 
   // Load profile on startup
   useEffect(() => {
@@ -67,7 +67,7 @@ const App: React.FC = () => {
     if (ex) {
        setWorkoutQueue([ex]);
        setCurrentExerciseIndex(0);
-       setSessionStartTime(Date.now());
+       setSessionStartTime(null);
        setView(View.WORKOUT);
     }
   };
@@ -88,7 +88,7 @@ const App: React.FC = () => {
       }
     }
     setCurrentExerciseIndex(0);
-    setSessionStartTime(Date.now());
+    setSessionStartTime(null);
     setView(View.WORKOUT);
   };
 
@@ -137,6 +137,10 @@ const App: React.FC = () => {
         return (
           <WorkoutSession 
             exercise={currentExercise} 
+            sessionStartTime={sessionStartTime}
+            onFirstActivity={() => {
+              if (!sessionStartTime) setSessionStartTime(Date.now());
+            }}
             onFinish={() => {
               if (currentExerciseIndex < workoutQueue.length - 1) {
                 // Next exercise in queue

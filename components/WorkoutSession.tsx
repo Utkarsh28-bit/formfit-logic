@@ -3,15 +3,17 @@ import { Exercise, ExerciseLog, WorkoutTarget } from '../types';
 import { calculateNextTarget } from '../services/workoutLogic';
 import { getLastLog, saveLog } from '../services/storageService';
 import { generateFormTip } from '../services/geminiService';
-import { Timer, CheckCircle, AlertCircle, TrendingUp, Info, ArrowLeft, MoreHorizontal, Youtube, X, Play, ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { Timer, CheckCircle, AlertCircle, TrendingUp, Info, ArrowLeft, MoreHorizontal, Youtube, X, Play, ChevronDown, ChevronUp, Image as ImageIcon, Clock } from 'lucide-react';
 import ExerciseDetail from './ExerciseDetail';
 
 interface Props {
   exercise: Exercise;
   onFinish: () => void;
+  sessionStartTime: number | null;
+  onFirstActivity: () => void;
 }
 
-const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
+const WorkoutSession: React.FC<Props> = ({ exercise, onFinish, sessionStartTime, onFirstActivity }) => {
   const [log, setLog] = useState<Partial<ExerciseLog>>({
     weightUsed: 0,
     repsPerformed: 0,
@@ -23,6 +25,9 @@ const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
   const [aiTip, setAiTip] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  
+  // Session Timer State
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Initialize Target on Mount
   useEffect(() => {
@@ -42,7 +47,22 @@ const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
     setShowDetail(false);
   }, [exercise]);
 
-  // Timer Effect
+  // Timer Effect (Session Duration)
+  useEffect(() => {
+    if (sessionStartTime) {
+      // Immediate update to avoid lag
+      setElapsedSeconds(Math.floor((Date.now() - sessionStartTime) / 1000));
+      
+      const interval = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - sessionStartTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setElapsedSeconds(0);
+    }
+  }, [sessionStartTime]);
+
+  // Rest Timer Effect
   useEffect(() => {
     if (isResting) {
       const interval = setInterval(() => {
@@ -54,6 +74,9 @@ const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
 
   const handleLogSet = async () => {
     if (!log.weightUsed || !log.repsPerformed || !log.rpe) return;
+
+    // Start the session timer if this is the first action
+    onFirstActivity();
 
     const newLog: ExerciseLog = {
       id: Date.now().toString(),
@@ -74,6 +97,12 @@ const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
 
     setIsResting(true);
     setRestTimer(0);
+  };
+  
+  const formatTime = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // If viewing details, show the detail component as a full-screen overlay
@@ -113,6 +142,12 @@ const WorkoutSession: React.FC<Props> = ({ exercise, onFinish }) => {
         )}
         
         <div className="absolute top-4 right-4 z-10 flex gap-2">
+           {/* Session Timer Badge */}
+           <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-2 rounded-full text-emerald-400 text-sm font-mono font-bold shadow-lg border border-white/10">
+             <Clock size={16} />
+             {formatTime(elapsedSeconds)}
+           </div>
+
           {(exercise.videoUrl || exercise.gifUrl) && (
             <button 
                onClick={() => setShowVideo(!showVideo)}

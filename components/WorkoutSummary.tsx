@@ -4,18 +4,20 @@ import { EXERCISES } from '../constants';
 import { Trophy, Clock, Dumbbell, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface Props {
-  startTime: number;
+  startTime: number | null;
   onClose: () => void;
 }
 
 const WorkoutSummary: React.FC<Props> = ({ startTime, onClose }) => {
   const endTime = Date.now();
-  const durationMs = endTime - startTime;
+  const durationMs = startTime ? endTime - startTime : 0;
   const minutes = Math.floor(durationMs / 60000);
+  const seconds = Math.floor((durationMs % 60000) / 1000);
   
   const allLogs = getLogs();
   // Filter logs that happened since start time
-  const sessionLogs = allLogs.filter(log => log.date >= startTime);
+  // If startTime is null, it means no set was logged, so no session logs.
+  const sessionLogs = startTime ? allLogs.filter(log => log.date >= startTime) : [];
 
   // Calculate stats
   const totalVolume = sessionLogs.reduce((acc, log) => acc + (log.weightUsed * log.repsPerformed), 0);
@@ -63,7 +65,7 @@ const WorkoutSummary: React.FC<Props> = ({ startTime, onClose }) => {
          <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
                <Clock className="mx-auto mb-2 text-blue-400" size={24} />
-               <p className="text-2xl font-bold text-white">{minutes} <span className="text-xs font-normal text-slate-500">min</span></p>
+               <p className="text-2xl font-bold text-white">{minutes}:{seconds.toString().padStart(2, '0')}</p>
                <p className="text-xs text-slate-500 uppercase tracking-wider font-bold">Duration</p>
             </div>
             <div className="bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50">
